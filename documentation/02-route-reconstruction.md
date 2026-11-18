@@ -4,9 +4,11 @@ The challenge brief schedules Review 1 before lunch and describes a final evalua
 
 ## Review 1 requirements
 
-- [ ] Agree on the candidate-score interface with the model owner and demonstrate decoding with fixed synthetic scores.
-- [ ] Show a toy directed graph where the highest pointwise scores yield a disconnected route and Viterbi finds a feasible sequence.
-- [ ] Define how empty candidates, timestamp gaps and impossible transitions are surfaced to callers.
+- [x] Use the Workstream 01 candidate-score fixture and demonstrate decoding with fixed synthetic scores.
+- [x] Show a toy directed graph where the highest pointwise scores yield a disconnected route and Viterbi finds a feasible sequence.
+- [x] Define how empty candidates, timestamp gaps and impossible transitions are surfaced to callers.
+
+The decoder returns `[0, 1]` on the synthetic fixture, whose independent top scores yield `[0, 2]`. It combines log candidate scores with the difference between directed network distance and observed GPS displacement. Empty candidate lists return unmatched assignments. Non-positive time steps, gaps over 30 seconds, and observations with no feasible transition start a separate section. Warnings report counts by reason, and geometry preserves the section boundaries.
 
 ## Final evaluation requirements
 

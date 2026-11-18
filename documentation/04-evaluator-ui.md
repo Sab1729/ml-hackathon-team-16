@@ -4,8 +4,8 @@ The challenge brief schedules Review 1 before lunch and describes a final evalua
 
 ## Review 1 requirements
 
-- [ ] Demonstrate a selectable trip, GPS trace, predicted route and results using the agreed API fixture.
-- [ ] Show distinct layers and a legend, confirm coordinate order, and exercise loading and error states.
+- [x] Demonstrate a selectable trip, GPS trace, predicted route and results using the agreed API fixture.
+- [x] Show distinct layers and a legend, confirm coordinate order, and exercise loading and error states.
 - [ ] Confirm that Laptop 2 can call the development API on Laptop 1.
 
 ## Final evaluation requirements

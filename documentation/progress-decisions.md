@@ -30,3 +30,13 @@ The outputs are written to `output/trips/00000001/`.
 | Dataset audit | Found a 153,064-second GPS gap and 13 reference discontinuities in training. | Use this evidence when defining gap and discontinuity handling for batch labeling and decoding. |
 
 See [Review 1 results and reproduction steps](review-1-data-and-model.md).
+
+## 18 November 2026 — Integrated Review 1 backup
+
+| Area | Decision and reason | Effect and follow-up |
+| --- | --- | --- |
+| API fixture | The development service runs the Viterbi decoder against recorded candidate scores when a trip is selected. | The UI exercises the actual interface and route reconstruction. Model-based scoring remains a final-evaluation task. |
+| UI visualization | The evaluator renders the returned coordinates as a local plan view, so the demo works without external map tiles. | The separately generated Folium audit map supplies the geographic basemap, candidate roads, and development reference overlay. |
+| Laptop verification | Verified the API and UI as separate HTTP services on one machine. Edge loaded both fixture trips, rendered both layers, and recovered from a simulated 503 using Retry. The API logged successful requests and an unknown-trip 404. | Repeat the browser request from a second physical laptop and capture the corresponding API log during the review. |
+
+On trip `00000001`, the decoder assigned all 1,315 observations, split the route into two sections after one impossible transition, and agreed with 97.34% of the provisional aligned labels. This measurement uses one training fixture and serves as an integration check.
