@@ -40,3 +40,12 @@ See [Review 1 results and reproduction steps](review-1-data-and-model.md).
 | Laptop verification | Verified the API and UI as separate HTTP services on one machine. Edge loaded both fixture trips, rendered both layers, and recovered from a simulated 503 using Retry. The API logged successful requests and an unknown-trip 404. | Repeat the browser request from a second physical laptop and capture the corresponding API log during the review. |
 
 On trip `00000001`, the decoder assigned all 1,315 observations, split the route into two sections after one impossible transition, and agreed with 97.34% of the provisional aligned labels. This measurement uses one training fixture and serves as an integration check.
+
+## 18 November 2026 — Trained pipeline on the backup branch
+
+- Use provisional ordered alignment and exclude observations more than 50 m from the aligned reference. The exclusion disproportionately affects trip `00000054`.
+- Sample per trip for comparison and Bayesian search, then refit the selected configuration on all eligible training observations. The search retained the starting histogram gradient boosting configuration.
+- Keep the existing Viterbi transition settings for the measured continuity improvement. Pointwise agreement declined on student test, so the results document both outcomes.
+- Support organizer-provided trip directories through a server-side manifest. Reserve the physical two-laptop evaluator demonstration for when the official data is available.
+
+See [development results](development-results.md).

@@ -10,6 +10,8 @@ The challenge brief schedules Review 1 before lunch and describes a final evalua
 
 ## Final evaluation requirements
 
+The backup branch supports trained inference in student and evaluator modes. Student mode was exercised end to end. Evaluator mode uses the local manifest described in the [README](../README.md#reserved-evaluation-mode).
+
 - [ ] Host the classifier, preprocessing, decoder and road network on Laptop 1.
 - [ ] Support selection and live inference for any of the ten reserved evaluator trips during final evaluation.
 - [ ] Calculate accuracy server-side using internal reference data and expose only aggregate results. Show receiving-laptop logs during the demo and capture successful responses for the report.

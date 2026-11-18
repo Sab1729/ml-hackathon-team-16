@@ -1,8 +1,10 @@
 """FastAPI development service for the PathSnap Review 1 fixtures."""
 
 import csv
+import json
 import logging
 import os
+from functools import lru_cache
 from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
@@ -11,12 +13,15 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from learned_inference import evaluate_assignments, load_artifact, predict_trip
 from route_decoder import decode, load_fixture
 
 
 ROOT = Path(__file__).resolve().parent
 DATA = Path(os.environ.get("PATHSNAP_DATA", ROOT / "Student folder/Student folder"))
 OUTPUT = Path(os.environ.get("PATHSNAP_REVIEW_OUTPUT", ROOT / "output/review-1"))
+MODE = os.environ.get("PATHSNAP_MODE", "review")
+MODEL = Path(os.environ.get("PATHSNAP_MODEL", ROOT / "artifacts/model.joblib"))
 FIXTURES = {
     "synthetic": OUTPUT / "synthetic_decoder_fixture.json",
     "00000001": OUTPUT / "00000001/decoder_fixture.json",
@@ -37,6 +42,36 @@ class PredictionRequest(BaseModel):
     trip_id: str
 
 
+@lru_cache(maxsize=1)
+def learned_service():
+    if MODE == "student":
+        folders = {folder.name: folder for folder in sorted((DATA / "student_test").iterdir())
+                   if folder.is_dir()}
+    elif MODE == "evaluator":
+        manifest = Path(os.environ["PATHSNAP_EVALUATOR_MANIFEST"]).resolve()
+        entries = json.loads(manifest.read_text(encoding="utf-8"))
+        if not isinstance(entries, dict) or not all(
+            key and isinstance(value, str) and value for key, value in entries.items()
+        ):
+            raise ValueError("Evaluator manifest must map trip IDs to folder paths")
+        folders = {key: (manifest.parent / value).resolve() for key, value in entries.items()}
+    else:
+        raise ValueError("Unknown PATHSNAP_MODE")
+    if len(folders) != 10 or len(set(folders.values())) != 10 or not all(
+        folder.is_dir() for folder in folders.values()
+    ):
+        raise ValueError("Expected exactly ten distinct trip directories")
+    return load_artifact(MODEL), folders
+
+
+def ready_service():
+    try:
+        return learned_service()
+    except (OSError, KeyError, ValueError) as error:
+        logger.warning("Could not initialize learned service: %s", error)
+        raise HTTPException(503, "Learned inference is unavailable") from error
+
+
 @app.middleware("http")
 async def log_request(request: Request, call_next):
     request_id = uuid4().hex[:12]
@@ -55,6 +90,9 @@ async def log_request(request: Request, call_next):
 
 @app.get("/health")
 def health():
+    if MODE != "review":
+        ready_service()
+        return {"status": "ready", "mode": MODE}
     ready = all(path.is_file() for path in FIXTURES.values())
     if not ready:
         raise HTTPException(503, "Generate the development fixtures with review_one.py")
@@ -63,6 +101,9 @@ def health():
 
 @app.get("/trips")
 def trips():
+    if MODE != "review":
+        _, folders = ready_service()
+        return {"trip_ids": list(folders)}
     health()
     return {"trip_ids": list(FIXTURES)}
 
@@ -71,6 +112,8 @@ def trips():
 def predict(payload: PredictionRequest, request: Request):
     trip_id = payload.trip_id
     request.state.trip_id = trip_id
+    if MODE != "review":
+        return predict_learned(trip_id)
     if trip_id not in FIXTURES:
         raise HTTPException(404, "Unknown development trip")
     try:
@@ -93,6 +136,34 @@ def predict(payload: PredictionRequest, request: Request):
     except (OSError, ValueError, KeyError) as error:
         logger.warning("request=%s fixture error: %s", request.state.request_id, error)
         raise HTTPException(503, "Development fixture unavailable or invalid") from error
+    return prediction_response(trip_id, observations, sections, metrics, warnings)
+
+
+def predict_learned(trip_id):
+    artifact, folders = ready_service()
+    if trip_id not in folders:
+        raise HTTPException(404, "Unknown trip")
+    try:
+        folder = folders[trip_id]
+        trip, _, observations, assignments, sections, warnings = predict_trip(folder, artifact)
+    except (OSError, ValueError) as error:
+        logger.warning("Inference failed for %s: %s", trip_id, error)
+        raise HTTPException(503, "Could not run inference for this trip") from error
+    metrics = {
+        "observation_count": len(assignments),
+        "matched_count": sum(arc is not None for arc in assignments),
+        "route_section_count": len(sections),
+    }
+    try:
+        _, accuracy = evaluate_assignments(folder, trip, assignments)
+        metrics.update(accuracy)
+    except (OSError, ValueError) as error:
+        logger.warning("Scoring unavailable for %s: %s", trip_id, error)
+        warnings.append("Reference scoring unavailable")
+    return prediction_response(trip_id, observations, sections, metrics, warnings)
+
+
+def prediction_response(trip_id, observations, sections, metrics, warnings):
     return {
         "trip_id": trip_id,
         "gps": {"type": "MultiPoint", "coordinates": [

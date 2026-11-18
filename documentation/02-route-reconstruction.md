@@ -12,6 +12,8 @@ The decoder returns `[0, 1]` on the synthetic fixture, whose independent top sco
 
 ## Final evaluation requirements
 
+The backup branch integrates learned candidate scores and includes [student-test route comparisons](development-results.md#route-reconstruction), including the pointwise accuracy and continuity tradeoff.
+
 - [ ] Decode the chosen model's scores into per-observation assignments and a directed route with any gaps clearly marked.
 - [ ] Compare classifier-only and classifier-plus-HMM on identical development trips. Report pointwise accuracy, continuity, sequence performance and cases where decoding helps or hurts.
 - [ ] Export decoder configuration and document the hidden states, emissions, transitions, recurrence and fallback behavior.

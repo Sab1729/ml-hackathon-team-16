@@ -77,7 +77,8 @@
       const response = await fetch(address + path, { ...options, signal });
       const payload = await response.json();
       if (!response.ok) throw new Error(
-        typeof payload.detail === "string" ? payload.detail : `HTTP ${response.status}`
+        payload.error?.message ??
+        (typeof payload.detail === "string" ? payload.detail : `HTTP ${response.status}`)
       );
       return payload;
     }
@@ -175,13 +176,13 @@
       trips.replaceChildren(new Option("Select a trip", ""));
       trips.disabled = retry.disabled = true;
       show(null);
-      setStatus("Loading development trips…");
+      setStatus("Loading trips…");
       try {
         const response = await fetchJSON("/trips", signal);
         if (signal.aborted) return;
         for (const id of response.trip_ids) trips.add(new Option(id, id));
         trips.disabled = !response.trip_ids.length;
-        setStatus(response.trip_ids.length ? "Select a development trip." : "No trips available.");
+        setStatus(response.trip_ids.length ? "Select a trip." : "No trips available.");
       } catch (error) {
         if (!signal.aborted) setStatus(`Could not load trips. ${error.message}`, true);
       }
@@ -193,7 +194,7 @@
       show(null);
       retry.disabled = true;
       if (!trip) {
-        setStatus("Select a development trip.");
+        setStatus("Select a trip.");
         return;
       }
       setStatus(`Reconstructing trip ${trip}…`);
