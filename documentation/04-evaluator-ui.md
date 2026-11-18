@@ -1,0 +1,28 @@
+# Evaluator UI and Folium visualizations
+
+The challenge brief schedules Review 1 before lunch and describes a final evaluation. The Review 1 checklists below are proposed team milestones. The brief gives no separate checklist for that checkpoint.
+
+## Review 1 requirements
+
+- [ ] Demonstrate a selectable trip, GPS trace, predicted route and results using the agreed API fixture.
+- [ ] Show distinct layers and a legend, confirm coordinate order, and exercise loading and error states.
+- [ ] Confirm that Laptop 2 can call the development API on Laptop 1.
+
+## Final evaluation requirements
+
+- [ ] Run the evaluator UI on Laptop 2 and present the ten reserved IDs supplied by the API.
+- [ ] On selection, request a live prediction and display the returned route and aggregate evaluation results. Keep reserved ground-truth labels and geometry server-side.
+- [ ] Generate mandatory Folium visuals from real project outputs. Include a representative map image and working UI screenshots in the report. Commit the map-generation code and provide the interactive HTML or reproducible generation steps.
+
+## Detailed tasks
+
+1. Configure the API base URL. Load trip IDs from `GET /trips` and preserve IDs as strings. Send the selected ID to `POST /predict` and validate that the response belongs to the active selection.
+2. Render the returned GeoJSON GPS points and predicted route as separate layers. Fit bounds to available geometry and keep route sections separate across gaps. Label layers and show server warnings and aggregate metrics, including a clear unavailable state for null metrics.
+3. Provide visible loading, empty and error states. Allow retries for connectivity failures. Prevent stale responses from replacing the current trip when the evaluator changes selection.
+4. Build a reproducible Folium map for a permitted development trip. Layer raw GPS, relevant road geometry, predicted route and the development reference route where available. Use distinct colors and markers, suitable zoom, toggles and a legend.
+5. Verify fixture rendering, coordinate order, failed requests, rapid selection changes and a route with discontinuities. Rehearse the live flow across both laptops with development data.
+6. Capture evidence for the report from the working UI and generated Folium map. Record the generating command and sample trip ID so teammates can reproduce the view.
+
+## Handoff
+
+Use the schemas and fixtures in [FastAPI backend and deployment](03-fastapi-backend.md). Coordinate development map examples with [data and model training](01-data-and-model-training.md) and [route reconstruction](02-route-reconstruction.md).
